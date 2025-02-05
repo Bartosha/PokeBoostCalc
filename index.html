@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pokemon Boost Calculator</title>
+  <!-- Czcionka Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <style>
+    /* Styl globalny */
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+      margin: 0; padding: 0;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh;
+    }
+    /* Kontener */
+    .container {
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+      width: 90%; max-width: 500px;
+      padding: 30px;
+    }
+    h1 {
+      text-align: center; margin-bottom: 20px; color: #333;
+    }
+    form {
+      display: flex; flex-direction: column;
+    }
+    label {
+      margin-bottom: 5px; font-weight: 500; color: #555;
+    }
+    select, input {
+      padding: 10px; margin-bottom: 20px;
+      border: 1px solid #ddd; border-radius: 5px;
+      font-size: 16px; outline: none;
+      transition: border-color 0.3s ease;
+    }
+    select:focus, input:focus {
+      border-color: #007bff;
+    }
+    button {
+      padding: 12px; background: #28a745; color: #fff;
+      border: none; border-radius: 5px;
+      font-size: 16px; font-weight: 600; cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #218838;
+    }
+    .result {
+      margin-top: 20px; padding: 15px;
+      border: 1px solid #ddd; background: #f9f9f9;
+      border-radius: 5px; color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Pokemon Boost Calculator</h1>
+    <form id="calculator">
+      <label for="boost">Select Boost Type:</label>
+      <select id="boost" name="boost">
+        <option value="650">Boost 2 (650 stones)</option>
+        <option value="442">Boost 3 (442 stones)</option>
+        <option value="30">Boost 30 (crystal/metal/ancient - 30 stones)</option>
+        <option value="50">Boost 50 (crystal/metal/ancient - 50 stones)</option>
+      </select>
+
+      <label for="current_level">Current Boost Level:</label>
+      <input type="number" id="current_level" name="current_level" min="0" required />
+
+      <label for="target_level">Target Boost Level:</label>
+      <input type="number" id="target_level" name="target_level" min="1" max="50" required />
+
+      <label for="stone_cost">Cost of One Stone (in $):</label>
+      <input type="number" id="stone_cost" name="stone_cost" min="0" step="0.01" required />
+
+      <label for="boost_cost">Current Boost Stone Price (in $):</label>
+      <input type="number" id="boost_cost" name="boost_cost" min="0" step="0.01" required />
+
+      <button type="button" onclick="calculateCost()">Calculate</button>
+    </form>
+
+    <div class="result" id="result"></div>
+  </div>
+
+  <script>
+    // Poprawione tabele dla każdego rodzaju boosta:
+    const boostTable = {
+      '650': [
+        0, 1, 2, 4, 6, 9, 12, 16, 20, 25, 30, 36, 42, 49, 56, 64, 72, 81, 90, 100,
+        110, 121, 132, 144, 156, 169, 182, 196, 210, 225, 240, 256, 272, 289, 306,
+        324, 342, 361, 380, 400, 420, 441, 462, 484, 506, 529, 552, 576, 600, 625, 650
+      ],
+      '442': [
+        0, 1, 2, 3, 5, 7, 9, 12, 15, 18, 22, 26, 30, 35, 40, 45, 51, 57, 63, 70,
+        77, 84, 92, 100, 108, 117, 126, 135, 145, 155, 165, 176, 187, 198, 210, 222,
+        234, 247, 260, 273, 287, 301, 315, 330, 345, 360, 376, 392, 408, 425, 442
+      ],
+      // Poprawiona tabela dla Boost (30) z Twojego zrzutu ekranu:
+      '30': [
+        0,  // +0
+        0,  // +1
+        1,  // +2
+        2,  // +3
+        2,  // +4
+        3,  // +5
+        3,  // +6
+        4,  // +7
+        4,  // +8
+        5,  // +9
+        5,  // +10
+        6,  // +11
+        7,  // +12
+        8,  // +13
+        9,  // +14
+        10, // +15
+        11, // +16
+        12, // +17
+        13, // +18
+        14, // +19
+        15, // +20
+        16, // +21
+        17, // +22
+        18, // +23
+        19, // +24
+        20, // +25
+        21, // +26
+        22, // +27
+        23, // +28
+        24, // +29
+        25, // +30
+        27, // +31
+        29, // +32
+        31, // +33
+        33, // +34
+        35, // +35
+        37, // +36
+        39, // +37
+        41, // +38
+        43, // +39
+        45, // +40
+        47, // +41
+        49, // +42
+        51, // +43
+        53, // +44
+        55, // +45
+        57, // +46
+        59, // +47
+        61, // +48
+        63, // +49
+        65  // +50
+      ],
+      '50': [
+        0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
+        15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
+        37, 38, 39, 40, 41, 42, 43, 44, 45
+      ]
+    };
+
+    function calculateCost() {
+      const boostType = document.getElementById('boost').value;
+      const currentLevel = parseInt(document.getElementById('current_level').value);
+      const targetLevel = parseInt(document.getElementById('target_level').value);
+      const stoneCost = parseFloat(document.getElementById('stone_cost').value);
+      const boostCost = parseFloat(document.getElementById('boost_cost').value);
+
+      if (
+        isNaN(currentLevel) ||
+        isNaN(targetLevel) ||
+        isNaN(stoneCost) ||
+        isNaN(boostCost)
+      ) {
+        alert('Please fill out all fields correctly.');
+        return;
+      }
+      if (currentLevel < 0 || targetLevel <= currentLevel || targetLevel > 50) {
+        alert('Invalid level range.');
+        return;
+      }
+
+      // Różnica w liczbie kamieni potrzebnych między poziomami
+      const stonesNeeded =
+        boostTable[boostType][targetLevel] - boostTable[boostType][currentLevel];
+
+      if (isNaN(stonesNeeded) || stonesNeeded < 0) {
+        alert('Error calculating stones needed. Please check the input values.');
+        return;
+      }
+
+      // Koszt zwykłych kamieni
+      const totalStoneCost = stonesNeeded * stoneCost;
+      const totalStoneCostK = (totalStoneCost / 1000000).toFixed(2) + 'KK';
+
+      // Koszt "boost kamieni"
+      const boostLevels = targetLevel - currentLevel; // 1 boost stone na każdy poziom
+      const totalBoostStoneCost = boostLevels * boostCost;
+      const totalBoostStoneCostK = (totalBoostStoneCost / 1000000).toFixed(2) + 'KK';
+
+      // Która metoda jest tańsza?
+      const isBoostBetter = totalBoostStoneCost < totalStoneCost;
+
+      // Poziom, od którego boost stone zaczyna się opłacać:
+      let costEffectiveLevel = null;
+      for (let i = currentLevel + 1; i <= targetLevel; i++) {
+        const stonesForLevel =
+          boostTable[boostType][i] - boostTable[boostType][i - 1];
+        const costForLevel = stonesForLevel * stoneCost;
+        if (boostCost < costForLevel) {
+          costEffectiveLevel = i;
+          break;
+        }
+      }
+
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = `
+        <p>
+          Total cost using <strong>${stonesNeeded}</strong> stones:
+          <strong>${totalStoneCostK}</strong> ($${totalStoneCost.toFixed(2)})
+        </p>
+        <p>
+          Total cost using boost stones:
+          <strong>${totalBoostStoneCostK}</strong> ($${totalBoostStoneCost.toFixed(2)})
+        </p>
+        <p>
+          <strong>Is Boost Stone More Cost-Effective?</strong>
+          ${isBoostBetter ? 'Yes' : 'No'}
+        </p>
+        ${
+          isBoostBetter && costEffectiveLevel !== null
+            ? `<p>Boost stone becomes cost-effective starting from level <strong>${costEffectiveLevel}</strong>.</p>`
+            : ''
+        }
+      `;
+    }
+  </script>
+</body>
+</html>
